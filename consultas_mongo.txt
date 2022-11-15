@@ -1,0 +1,269 @@
+Consultas mongo:
+a.	Listado de los votos obtenidos por todos los candidatos con el nombre del partido político al que pertenecen ordenados de mayor a menor de forma general por todas más mesas y también por una mesa en específica.
+Listado de las notas obtenidas en las materia con el nombre del departamento al que pertenece ordenados de mayor a menor de forma general para todos los estudiantes y para un estudiante especifico
+Este query si hace sobre inscripcion
+
+Se puede hacer de dos formas, la primera es direwcto con este query: 
+
+[
+    {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }, 
+            'numeroInscripciones': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$addFields': {
+            'depId': '$materia.departamento.$id'
+        }
+    }, {
+        '$lookup': {
+            'from': 'departamento', 
+            'localField': 'depId', 
+            'foreignField': '_id', 
+            'as': 'departamento'
+        }
+    }, {
+        '$set': {
+            'departamento': {
+                '$first': '$departamento'
+            }
+        }
+    } , {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }
+] 
+La segunda es solo con el siguiente query y desde el back hacer un ciclo for para iterar sobre los departamentos y obtener su informacion:
+[
+    {
+        '$match': {
+            'estudiante.$id': ObjectId('6358b9c03386031536a2d67d')
+        }
+    }, {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }, 
+            'numeroInscripciones': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }
+]
+
+itero sobre cada uno y con el _id hago la busqueda con el repositoerio de materias para traer todo el objeto materia con ese id.
+a ese objeto materia le saco el dbref (referencia) al departamento y con ese object id y el repositorio de departameno traigo todo el objeto 
+departamento y com estoy iterando esto se hace para cada uno de los registros de la consulta raiz
+
+
+b.	Listado de mesas con mayor participación ciudadana (suma de todos los votos de la mesa) ordenados de menor a mayor.
+Listado de estudiantes con mayores notas (suma de todas las notas del estudiante) orenado de mnayot a menor
+
+este query se hace sobre inscripcipon
+- Trayendo todo de mongo:
+[
+    {
+        '$group': {
+            '_id': '$estudiante', 
+            'sumaNotasEstudiante': {
+                '$sum': '$nota_final'
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'estudiante', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'estudiante'
+        }
+    }, {
+        '$set': {
+            'estudiante': {
+                '$first': '$estudiante'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasEstudiante': 1
+        }
+    }
+]
+
+- Trayendo solo de mongo el query raiz con la agregacion y complementando con las funcionalidaddes del backend
+[
+    {
+        '$group': {
+            '_id': '$estudiante', 
+            'sumaNotasEstudiante': {
+                '$sum': '$nota_final'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasEstudiante': 1
+        }
+    }
+]
+
+con el $id del DBRef en _id y el repositorio de estudiante traer el objeto del estudiante referente al id
+
+c.	Listado de partidos políticos con cantidad de votos sufragados a su favor (suma por candidato) ordenados de mayor a menor de forma general y con opción de filtrar por mesa.
+Listado de departamentos con suma de todas sus notas (de sus materias) ordenado de mayor a menor de forma general y con opción de filtrar por estudiante
+
+El query se hace sobre inscripcion
+a. trayendo para todos los estudiantes
+[
+    {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': 'materia.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$group': {
+            '_id': '$materia.departamento.$id', 
+            'sumaNotasDepartamento': {
+                '$sum': '$nota_final'
+            }, 
+            'departamento': {
+                '$first': '$materia.departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasDepartamento': -1
+        }
+    }
+]
+
+b. trayendo para un estudiante especifico
+[
+    {
+        '$match': {
+            'estudiante.$id': ObjectId('6358b9c03386031536a2d67d')
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': 'materia.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$group': {
+            '_id': '$materia.departamento.$id', 
+            'sumaNotasDepartamento': {
+                '$sum': '$nota_final'
+            }, 
+            'departamento': {
+                '$first': '$materia.departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasDepartamento': -1
+        }
+    }
+]
+
+d.	Distribución porcentual por partido político del nuevo congreso de la república. Tenga en cuenta que el congreso para esta edición será compuesto por los primeros 15 senadores mas votados en todas las mesas
+Distribución porcentual por departamento del top de la universidad. Tenga encuenta que el top esta compiuesto por las 15 materias con mayores notas 
+
+[
+    {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'departamento', 
+            'localField': 'materia.departamento.$id', 
+            'foreignField': '_id', 
+            'as': 'departamento'
+        }
+    }, {
+        '$set': {
+            'departamento': {
+                '$first': '$departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }, {
+        '$limit': 15
+    }, {
+        '$group': {
+            '_id': '$departamento', 
+            'materiasPorDepartamento': {
+                '$count': {}
+            }
+        }
+    }, {
+        '$addFields': {
+            'porcentaje': {
+                '$multiply': [
+                    {
+                        '$divide': [
+                            '$materiasPorDepartamento', 15
+                        ]
+                    }, 100
+                ]
+            }
+        }
+    }
+]

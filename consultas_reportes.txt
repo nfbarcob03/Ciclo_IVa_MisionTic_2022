@@ -1,0 +1,345 @@
+Consultas reportes mongo:
+1a. Todos los estudiantes: 
+Este query sio hace sobre inscripcion
+- Desde mongo todo filtrado como consulta
+[
+    {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }, 
+            'numeroInscripciones': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$addFields': {
+            'depId': '$materia.departamento.$id'
+        }
+    }, {
+        '$lookup': {
+            'from': 'departamento', 
+            'localField': 'depId', 
+            'foreignField': '_id', 
+            'as': 'departamento'
+        }
+    }, {
+        '$set': {
+            'departamento': {
+                '$first': '$departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }
+]
+
+
+- Trayendo la consulta raiz en mongo y complementando desde el backend
+[
+    {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }, 
+            'numeroInscripciones': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }
+]
+
+
+itero sobre cada uno y con el _id hago la busqueda con el repositoerio de materias para traer todo el objeto materia con ese id.
+a ese objeto materia le saco el dbref (referencia) al departamento y con ese object id y el repositorio de departameno traigo todo el objeto 
+departamento y com estoy iterando esto se hace para cada uno de los registros de la consulta raiz
+
+
+1.b Filtrado para un estudiante
+- Desde mongo todo filtrado como consulta
+[
+    {
+        '$match': {
+            'estudiante.$id': ObjectId('6358b9c03386031536a2d67d')
+        }
+    }, {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }, 
+            'numeroInscripciones': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$addFields': {
+            'depId': '$materia.departamento.$id'
+        }
+    }, {
+        '$lookup': {
+            'from': 'departamento', 
+            'localField': 'depId', 
+            'foreignField': '_id', 
+            'as': 'departamento'
+        }
+    }, {
+        '$set': {
+            'departamento': {
+                '$first': '$departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }
+]
+
+- Trayendo la consulta raiz en mongo y complementando desde el backend
+
+[
+    {
+        '$match': {
+            'estudiante.$id': ObjectId('6358b9c03386031536a2d67d')
+        }
+    }, {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }, 
+            'numeroInscripciones': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }
+]
+
+itero sobre cada uno y con el _id hago la busqueda con el repositoerio de materias para traer todo el objeto materia con ese id.
+a ese objeto materia le saco el dbref (referencia) al departamento y con ese object id y el repositorio de departameno traigo todo el objeto 
+departamento y com estoy iterando esto se hace para cada uno de los registros de la consulta raiz
+
+
+
+2. 
+este query se hace sobre inscripcipon
+- Trayendo todo de mongo:
+[
+    {
+        '$group': {
+            '_id': '$estudiante', 
+            'sumaNotasEstudiante': {
+                '$sum': '$nota_final'
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'estudiante', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'estudiante'
+        }
+    }, {
+        '$set': {
+            'estudiante': {
+                '$first': '$estudiante'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasEstudiante': 1
+        }
+    }
+]
+
+- Trayendo solo de mongo el query raiz con la agregacion y complementando con las funcionalidaddes del backend
+[
+    {
+        '$group': {
+            '_id': '$estudiante', 
+            'sumaNotasEstudiante': {
+                '$sum': '$nota_final'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasEstudiante': 1
+        }
+    }
+]
+
+con el $id del DBRef en _id y el repositorio de estudiante traer el objeto del estudiante referente al id
+
+
+3.
+El query se hace sobre inscripcion
+a. trayendo para todos los estudiantes
+[
+    {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': 'materia.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$group': {
+            '_id': '$materia.departamento.$id', 
+            'sumaNotasDepartamento': {
+                '$sum': '$nota_final'
+            }, 
+            'departamento': {
+                '$first': '$materia.departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasDepartamento': -1
+        }
+    }
+]
+
+b. trayendo para un estudiante especifico
+[
+    {
+        '$match': {
+            'estudiante.$id': ObjectId('6358b9c03386031536a2d67d')
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': 'materia.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$group': {
+            '_id': '$materia.departamento.$id', 
+            'sumaNotasDepartamento': {
+                '$sum': '$nota_final'
+            }, 
+            'departamento': {
+                '$first': '$materia.departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasDepartamento': -1
+        }
+    }
+]
+
+4. 
+
+[
+    {
+        '$group': {
+            '_id': '$materia', 
+            'sumaNotasMateria': {
+                '$sum': '$nota_final'
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'materia', 
+            'localField': '_id.$id', 
+            'foreignField': '_id', 
+            'as': 'materia'
+        }
+    }, {
+        '$set': {
+            'materia': {
+                '$first': '$materia'
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'departamento', 
+            'localField': 'materia.departamento.$id', 
+            'foreignField': '_id', 
+            'as': 'departamento'
+        }
+    }, {
+        '$set': {
+            'departamento': {
+                '$first': '$departamento'
+            }
+        }
+    }, {
+        '$sort': {
+            'sumaNotasMateria': -1
+        }
+    }, {
+        '$limit': 15
+    }, {
+        '$group': {
+            '_id': '$departamento', 
+            'materiasPorDep': {
+                '$count': {}
+            }
+        }
+    }, {
+        '$addFields': {
+            'porcentaje': {
+                '$multiply': [
+                    {
+                        '$divide': [
+                            '$materiasPorDep', 15
+                        ]
+                    }, 100
+                ]
+            }
+        }
+    }
+]
